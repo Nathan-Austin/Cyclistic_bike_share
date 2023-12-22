@@ -2,7 +2,9 @@
 title: "Google Analytics Capstone Project: How Does a Bike-Share Navigate Speedy Success?"
 author: "N Austin"
 date: "2023-12-19"
-output: html_document
+output: html_document:
+  toc = TRUE
+
 data: 2022-12-01 to 2023-11-25
 ---
 
@@ -11,25 +13,24 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## How Does a Bike-Share Navigate Speedy Success?
+### Google Analytics Capstone Project: Case stay 1. Cyclistic Bike-Share {.unlisted .unnumbered}
 
-### Google Analytics Capstone Project: Case stay 1. Cyclistic Bike-Share
-
-### Business question: How do annual members and casual riders use Cyclistic bikes differently?
+### 1. Business question: How do annual members and casual riders use Cyclistic bikes differently?
 
 ![](https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/00_2141_Bicycle-sharing_systems_-_Sweden.jpg/290px-00_2141_Bicycle-sharing_systems_-_Sweden.jpg)
 
 Image [W.Bulach](https://commons.wikimedia.org/wiki/User:W._Bulach)
 
-#### Scenario
+#### Scenario {.unlisted .unnumbered}
 
 You are a junior data analyst working in the marketing analyst team at Cyclistic, a bike-share company in Chicago. The director of marketing believes the company’s future success depends on maximizing the number of annual memberships. Therefore, your team wants to understand how casual riders and annual members use Cyclistic bikes differently. From these insights, your team will
 design a new marketing strategy to convert casual riders into annual members. But first, Cyclistic executives must approve your recommendations, so they must be backed up with compelling data insights and professional data visualizations.
 
-#### About the company
+#### 2. About the company
 
 In 2016, Cyclistic launched a successful bike-share offering. Since then, the program has grown to a fleet of 5,824 bicycles that are geotracked and locked into a network of 692 stations across Chicago. The bikes can be unlocked from one station and returned to any other station in the system anytime.
 
-#### Tasks
+#### Tasks {.unlisted .unnumbered}
 Produce a report with the following deliverables:
 * 1. A clear statement of the business task
 * 2. A description of all data sources used
@@ -38,13 +39,13 @@ Produce a report with the following deliverables:
 * 5. Supporting visualizations and key findings
 * 6. Your top three recommendations based on your analysis
 
-##### Business task: How do annual members and casual riders use Cyclistic bikes differently?
+### 3. Business task: How do annual members and casual riders use Cyclistic bikes differently?
 Analyse the data from the previous 12 months and find out how the different members use the bikes so we can target more casual members via a digital marketing strategy to become annual members.
 
-##### Data: where has it come from and what time frame.
+##### Data: where has it come from and what time frame. {.unlisted .unnumbered}
 The data is a set of .csv files provided by the company for each month from December 22 to November 23
 
-### Preparation for analysis.
+#### Preparation for analysis. {.unlisted .unnumbered}
 
 ```{r}
 library(tidyverse)
@@ -57,7 +58,7 @@ library(scales)
 ```
 
 
-### Importing and data validation.
+### 4. Importing and data validation.
 Read in individual data sets.
 
 ```{r}
@@ -85,7 +86,7 @@ head(data)
 ```
 
 
-#### Exploratory Data Analysis
+### 5.Exploratory Data Analysis
 Lets have a peak at our data.
 
 ```{r}
@@ -119,7 +120,7 @@ plot_missing(data)
 
 Given that we have the most of the start and end latitudes we maybe able to fill these missing values with confidence. Lets find out.
 
-#### Data Cleaning
+### 6. Data Cleaning
 Lets check how many unique station IDs we have compared to unique sets of starting or ending co-ordinates.
 ```{r}
 # Count unique station ids
@@ -158,7 +159,7 @@ Lets check for duplicates.
 
 Now we have clean data to work with lets do some data wrangling.
 
-#### Data wrangling
+### 7. Data wrangling
 
 We dont need the latitude and longditude columns as the data serves us no purpose so we can remove them.
 
@@ -240,10 +241,11 @@ data_clean$starting_time <- as.numeric(format(data_clean$start_time, "%H.%M"))
 
 
 data_clean <- data_clean %>% mutate(rush_hour = case_when(starting_time >= 6.0 & starting_time <= 08.59 ~ "Morning rush",
-                                                          starting_time >= 9.0 & starting_time <= 15.59 ~ "Midday",
+                                                          starting_time >= 9.0 & starting_time <= 11.59 ~ "Late morning",
+                                                          starting_time >= 12 & starting_time <= 15.59 ~ "Afternoon",
                                                           starting_time >= 16.0 & starting_time <= 18.59 ~ "Evening rush",
                                                           starting_time >= 19.0 & starting_time <= 23.59 ~ "Night" , 
-                                                          starting_time >= 0.0 & starting_time <= 5.59  ~ "Midnight Hours"))
+                                                          starting_time >= 0.0 & starting_time <= 5.59  ~ "Midnight hours"))
 
 data_clean <- select(data_clean,-starting_time)
 
@@ -251,18 +253,23 @@ head(data_clean)
 ```
 Now we have clean data and some extra columns to work with so we can start the analysis
 
-### Analysis
+### 8. Analysis
 
 Lets Calculate the average ride_length for members and casual riders.
+
 ```{r}
-aggregate(data_clean$duration_min ~data_clean$user_type, FUN=mean)
+data_clean %>% 
+  group_by(user_type) %>% 
+  summarise_at(vars(duration_min), list(average_ride_time = mean))
 ```
+
+
 Calculate the average ride_time for users by day_of_week. 
 ```{r}
 data_clean%>%
 group_by(user_type, wday) %>%
 summarise(n = n(), duration=mean(duration_min))%>%
-mutate(percentage = n/sum(n) *100)
+mutate(percentage = round(n/sum(n) *100))
 ```
 Ride count by user, month
 ```{r}
@@ -280,8 +287,25 @@ lets check the user types and see the customer base
 data_clean %>% 
   count(user_type) %>% 
   mutate(percent = n/nrow(data_clean),
-         percent_label = paste0(round(percent * 100)))
+         "%" = paste0(round(percent * 100)))
 ```
+Lets see how the rides break down by bike type
+```{r}
+data_clean %>% 
+  count(bike_type) %>% 
+  mutate(percent = n/nrow(data_clean),
+         "%" = paste0(round(percent*100)))
+```
+Lets check our the duration usage of each bike type
+```{r}
+data_clean %>% 
+  group_by(bike_type) %>% 
+  summarise(total=n()) %>% #
+  mutate(total_hours = round(total/60),
+         days = round(total_hours/24))
+```
+
+
 Lets get the top 10 pickup points for each day of the week. 
 
 ```{r}
@@ -309,9 +333,65 @@ rushhour <- data_clean %>%
       arrange(rush_hour)
 rushhour
 ```
+lets have a look at the users and the longer rides or multi day hires
+```{r}
+long_hire <- data_clean %>% 
+  group_by(user_type) %>% 
+  mutate(longhire = case_when(duration_min >= 1 & duration_min <= 20 ~ "0 - 20 min",
+                               duration_min >= 21 & duration_min <= 60 ~ "20-60 min",
+                               duration_min >= 61 & duration_min <= 120 ~ "1-2 hrs",
+                               duration_min >= 121 & duration_min <= 240 ~ "2-4 hrs",
+                               duration_min >= 241 & duration_min <= 480 ~ "4-8 hrs" , 
+                               duration_min >= 481 & duration_min <= 1440 ~ "8-24hrs",
+                               duration_min >= 1441 & duration_min <= 2880 ~ "1-2 days",
+                               duration_min >= 2881 & duration_min <= 5760 ~ "2-4 days",
+                               duration_min >= 5760 ~ "5 days or more")) %>% 
+  group_by( longhire, user_type) %>% 
+  summarise(numberofrides = n(),.groups = 'drop') %>% 
+  mutate(longhire = factor(longhire, levels = c("0 - 20 min", "20-60 min", "1-2 hrs", "2-4 hrs", "4-8 hrs", "8-24hrs", "1-2 days", "2-4 days", "5 days or more")))
 
+long_hire
 
-###  Visual Analysis
+```
+
+Lets drop the rides of an hour or less
+
+```{r}
+long_hire_filtered <- long_hire %>% 
+  filter(longhire != "0 - 20 min" & longhire != "20-60 min")
+```
+
+```{r}
+ggplot(long_hire_filtered, aes(x = user_type, y = numberofrides, fill = longhire)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Count of each longhire and group them by user_type",
+       x = "User Type",
+       y = "Number of Rides",
+       fill = "Long Hire") +
+  theme_minimal() +
+  scale_y_log10() +
+  geom_text(aes(label = numberofrides), position = position_dodge(width = 0.9), vjust = -0.5)
+```
+
+Lets have a closer look at the multiday hires
+
+```{r}
+long_hire_filtered1 <- long_hire %>% 
+  filter(longhire %in% c("1-2 days", "2-4 days", "5 days or more"))
+
+ggplot(long_hire_filtered1, aes(x = user_type, y = numberofrides, fill = longhire)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Count of each longhire and group them by user_type",
+       x = "User Type",
+       y = "Number of Rides",
+       fill = "Long Hire") +
+  theme_minimal() +
+  geom_text(aes(label = numberofrides), position = position_dodge(width = 0.9), vjust = -0.5)
+```
+
+From and inital 4299967 ride we can see a total of 131 rides that went for more than a day. This number is insignificant in the scheme of thing and could be from user error when closing out the ride or from errors in the docking station so no further investigation is warranted.
+
+### 9. Visual Analysis
 Lets plot the different user types
 ```{r}
 data_clean %>% 
@@ -352,7 +432,7 @@ In a previous 2021-2022 anaylsis electric bike usage was at 24% and 25% respecti
 ![April 2021 - March 2022](https://www.kaggleusercontent.com/kf/101321435/eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..FImFb4l_C94OLx2Q5iAgFQ.fGU90qe4_o76Urct_27V1pUvvHfSsnyvY1_DBAuenskmpBYstOPSSYFLxjN8qvbWzHpuxvqviPt4QJUlw_RhmFUWgUJmA5GhUo0C_IiCRdTo67fDF4nfxkyf9-Zjx2GUK7HMUzsjvatQc-uUry1rqanFy371qX9Rymmtv4OyhoWtphFzdf8cDGCJJgdfGQ_OAUske1yHfSAaULiKDWWrIwEYI84e-xVPxqymhNjDXQimAq-ao4mLn7VaGueBnwxnlRY2hRsnzCFZrDdzgK8k0ude3IARkUz3kn-zmXgWvupvTgNH7oMHHsxUi7HWPFz9bBUG9KfeizDO-2nFKjneGxvyEWsEcDJ20Kh6syey9siL3Ha6V20RE8LIQ1VxqIioI4g_dg13ENoeVmy3HQCMFf6FlfaH-nncgyeXa8Y_102EGD3ywgXDZai3DGKCqhcnEZsxIlsdmmeUl6ePHYq8VdpXXtA4TCd8ESuaF3ck1liRN8n3M7Yxk0iICifU0FDLa-2bR0wMU85YM9Bk_pUmBq23GZYXmWWG-zJD2tGSqOU9Lg2KV-ri627AVRUiwqgSQmq-EjW9NB4wXA0TResAuC_RRKPvQwEycus4r561UgSe7da1PiU7QJLG4KeWl8P-0lXu9x4eHcOgOeWKgFfPFs3Ehk7l3U5YH5cqdMG-Tmg.OxzG0pjkvudrN89Z1XGIfw/__results___files/__results___24_0.png)
 source [PEYMAN MIHANKHAH](https://www.kaggle.com/code/peymanmi/cyclistic-casestudy-r)
 
-Remember those long rental periods? lets explore those
+Lets look at when the most rides occur.
 
 ```{r}
 ggplot(hour, aes(hour, numberofrides,  fill = user_type, group = user_type)) +
@@ -372,12 +452,12 @@ theme(plot.title = element_text(size = 22, color = "#42a0ab", face = "bold"),
     axis.text.x = element_text(size = 10, color = "grey20", face = "bold"),
     axis.text.y = element_text(size = 10, color = "grey20", face = "bold"))
 ```
-
+Lets break this down further into peak times such as morning and evening traditional work times. 
 
 ```{r}
 rushhour %>% ggplot(mapping = aes(x=rush_hour, y= numberofrides, fill = user_type)) + 
   geom_col(position="dodge") +
-  scale_x_discrete(limits = c("Morning rush", "Midday", "Evening rush", "Night", "Midnight Hours")) +
+  scale_x_discrete(limits = c("Morning rush", "Late morning", "Afternoon", "Evening rush", "Night", "Midnight hours")) +
   scale_y_continuous(labels = comma) +
   scale_fill_manual(values = c("#91d8e0", "#42a0ab")) +
   ggtitle("Number of rides taken by each user type") +
