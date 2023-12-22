@@ -61,18 +61,18 @@ library(scales)
 Read in individual data sets.
 
 ```{r}
-dec22 <- read_csv("202212-divvy-tripdata.csv")
-jan23 <- read_csv("202301-divvy-tripdata.csv")
-feb23 <- read_csv("202302-divvy-tripdata.csv")
-mar23 <- read_csv("202303-divvy-tripdata.csv")
-apr23 <- read_csv("202304-divvy-tripdata.csv")
-may23 <- read_csv("202305-divvy-tripdata.csv")
-jun23 <- read_csv("202306-divvy-tripdata.csv")
-jul23 <- read_csv("202307-divvy-tripdata.csv")
-aug23 <- read_csv("202308-divvy-tripdata.csv")
-sep23 <- read_csv("202309-divvy-tripdata.csv")
-oct23 <- read_csv("202310-divvy-tripdata.csv")
-nov23 <- read_csv("202311-divvy-tripdata.csv")
+dec22 <- read_csv("./2023_bike_trips_working_directory/202212-divvy-tripdata.csv")
+jan23 <- read_csv("./2023_bike_trips_working_directory/202301-divvy-tripdata.csv")
+feb23 <- read_csv("./2023_bike_trips_working_directory/202302-divvy-tripdata.csv")
+mar23 <- read_csv("./2023_bike_trips_working_directory/202303-divvy-tripdata.csv")
+apr23 <- read_csv("./2023_bike_trips_working_directory/202304-divvy-tripdata.csv")
+may23 <- read_csv("./2023_bike_trips_working_directory/202305-divvy-tripdata.csv")
+jun23 <- read_csv("./2023_bike_trips_working_directory/202306-divvy-tripdata.csv")
+jul23 <- read_csv("./2023_bike_trips_working_directory/202307-divvy-tripdata.csv")
+aug23 <- read_csv("./2023_bike_trips_working_directory/202308-divvy-tripdata.csv")
+sep23 <- read_csv("./2023_bike_trips_working_directory/202309-divvy-tripdata.csv")
+oct23 <- read_csv("./2023_bike_trips_working_directory/202310-divvy-tripdata.csv")
+nov23 <- read_csv("./2023_bike_trips_working_directory/202311-divvy-tripdata.csv")
 ```
 
 Merge all data sets into 1 file.
