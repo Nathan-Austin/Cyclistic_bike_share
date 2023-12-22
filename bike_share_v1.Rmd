@@ -346,7 +346,7 @@ long_hire <- data_clean %>%
                                duration_min >= 1441 & duration_min <= 2880 ~ "1-2 days",
                                duration_min >= 2881 & duration_min <= 5760 ~ "2-4 days",
                                duration_min >= 5760 ~ "5 days or more")) %>% 
-  group_by( longhire, user_type) %>% 
+  group_by( longhire, user_type, wday) %>% 
   summarise(numberofrides = n(),.groups = 'drop') %>% 
   mutate(longhire = factor(longhire, levels = c("0 - 20 min", "20-60 min", "1-2 hrs", "2-4 hrs", "4-8 hrs", "8-24hrs", "1-2 days", "2-4 days", "5 days or more")))
 
@@ -354,42 +354,6 @@ long_hire
 
 ```
 
-Lets drop the rides of an hour or less
-
-```{r}
-long_hire_filtered <- long_hire %>% 
-  filter(longhire != "0 - 20 min" & longhire != "20-60 min")
-```
-
-```{r}
-ggplot(long_hire_filtered, aes(x = user_type, y = numberofrides, fill = longhire)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  labs(title = "Count of each longhire and group them by user_type",
-       x = "User Type",
-       y = "Number of Rides",
-       fill = "Long Hire") +
-  theme_minimal() +
-  scale_y_log10() +
-  geom_text(aes(label = numberofrides), position = position_dodge(width = 0.9), vjust = -0.5)
-```
-
-Lets have a closer look at the multiday hires
-
-```{r}
-long_hire_filtered1 <- long_hire %>% 
-  filter(longhire %in% c("1-2 days", "2-4 days", "5 days or more"))
-
-ggplot(long_hire_filtered1, aes(x = user_type, y = numberofrides, fill = longhire)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  labs(title = "Count of each longhire and group them by user_type",
-       x = "User Type",
-       y = "Number of Rides",
-       fill = "Long Hire") +
-  theme_minimal() +
-  geom_text(aes(label = numberofrides), position = position_dodge(width = 0.9), vjust = -0.5)
-```
-
-From and inital 4299967 ride we can see a total of 131 rides that went for more than a day. This number is insignificant in the scheme of thing and could be from user error when closing out the ride or from errors in the docking station so no further investigation is warranted.
 
 ### 9. Visual Analysis
 Lets plot the different user types
@@ -409,7 +373,15 @@ data_clean %>%
   scale_fill_manual(values = c("#91d8e0","#42a0ab")) +
   labs(fill = "User Type" ,
        title = "Percentage of User Type") +
-  theme(plot.title = element_text(hjust = 0.5,size = 18, color = "black"))
+  theme(plot.title = element_text(size = 22, color = "#42a0ab", face = "bold"), 
+    plot.subtitle = element_text(size = 14, color = "grey20", face = "bold"), 
+    plot.caption = element_text(size = 8, color = "grey35"),
+    legend.title = element_text(size = 16, face = "bold", color = "#42a0ab"),
+    legend.text = element_text(size = 14, color = "grey20"),
+    axis.title.x = element_text(size = 15, color = "#42a0ab", face = "bold"), 
+    axis.title.y = element_text(size = 15, color = "#42a0ab", face = "bold"),
+    axis.text.x = element_text(size = 10, color = "grey20", face = "bold"),
+    axis.text.y = element_text(size = 10, color = "grey20", face = "bold"))
 ```
 Lets now have a look at what type of bikes each user type used.
 ```{r}
@@ -424,12 +396,21 @@ geom_col(position="dodge") +
 scale_fill_manual(values = c("#91d8e0","#42a0ab")) +
 geom_text(aes(label = paste0(round(percentage), "%")), position=position_dodge(0.85), vjust = 0) +
 labs(x="Users", y="Bike Trips *1000", title="Bike preference per users and rideable type")+
+  theme(plot.title = element_text(size = 22, color = "#42a0ab", face = "bold"), 
+    plot.subtitle = element_text(size = 14, color = "grey20", face = "bold"), 
+    plot.caption = element_text(size = 8, color = "grey35"),
+    legend.title = element_text(size = 16, face = "bold", color = "#42a0ab"),
+    legend.text = element_text(size = 14, color = "grey20"),
+    axis.title.x = element_text(size = 15, color = "#42a0ab", face = "bold"), 
+    axis.title.y = element_text(size = 15, color = "#42a0ab", face = "bold"),
+    axis.text.x = element_text(size = 10, color = "grey20", face = "bold"),
+    axis.text.y = element_text(size = 10, color = "grey20", face = "bold"))+
 facet_wrap(~bike_type)
 ```
 We can see that the 'docked_bike' usage is only for casual members and if we compare this to previos years data we can see a big increase in electric bike usage.
-In a previous 2021-2022 anaylsis electric bike usage was at 24% and 25% respectively 
+In a previous 2021-2022 analysis electric bike usage was at 24% and 25% respectively 
 
-![April 2021 - March 2022](https://www.kaggleusercontent.com/kf/101321435/eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..FImFb4l_C94OLx2Q5iAgFQ.fGU90qe4_o76Urct_27V1pUvvHfSsnyvY1_DBAuenskmpBYstOPSSYFLxjN8qvbWzHpuxvqviPt4QJUlw_RhmFUWgUJmA5GhUo0C_IiCRdTo67fDF4nfxkyf9-Zjx2GUK7HMUzsjvatQc-uUry1rqanFy371qX9Rymmtv4OyhoWtphFzdf8cDGCJJgdfGQ_OAUske1yHfSAaULiKDWWrIwEYI84e-xVPxqymhNjDXQimAq-ao4mLn7VaGueBnwxnlRY2hRsnzCFZrDdzgK8k0ude3IARkUz3kn-zmXgWvupvTgNH7oMHHsxUi7HWPFz9bBUG9KfeizDO-2nFKjneGxvyEWsEcDJ20Kh6syey9siL3Ha6V20RE8LIQ1VxqIioI4g_dg13ENoeVmy3HQCMFf6FlfaH-nncgyeXa8Y_102EGD3ywgXDZai3DGKCqhcnEZsxIlsdmmeUl6ePHYq8VdpXXtA4TCd8ESuaF3ck1liRN8n3M7Yxk0iICifU0FDLa-2bR0wMU85YM9Bk_pUmBq23GZYXmWWG-zJD2tGSqOU9Lg2KV-ri627AVRUiwqgSQmq-EjW9NB4wXA0TResAuC_RRKPvQwEycus4r561UgSe7da1PiU7QJLG4KeWl8P-0lXu9x4eHcOgOeWKgFfPFs3Ehk7l3U5YH5cqdMG-Tmg.OxzG0pjkvudrN89Z1XGIfw/__results___files/__results___24_0.png)
+![2021-2022](results_21.png){out.dim= c(50%)}  
 source [PEYMAN MIHANKHAH](https://www.kaggle.com/code/peymanmi/cyclistic-casestudy-r)
 
 Lets look at when the most rides occur.
@@ -465,7 +446,126 @@ rushhour %>% ggplot(mapping = aes(x=rush_hour, y= numberofrides, fill = user_typ
   ylab("Number Of  Rides") +
   labs(fill = "User Type")+
   theme_classic()+
-  theme(plot.title = element_text(hjust = 0.5, size=20, face = "bold"))
+  theme(plot.title = element_text(size = 22, color = "#42a0ab", face = "bold"), 
+    plot.subtitle = element_text(size = 14, color = "grey20", face = "bold"), 
+    plot.caption = element_text(size = 8, color = "grey35"),
+    legend.title = element_text(size = 16, face = "bold", color = "#42a0ab"),
+    legend.text = element_text(size = 14, color = "grey20"),
+    axis.title.x = element_text(size = 15, color = "#42a0ab", face = "bold"), 
+    axis.title.y = element_text(size = 15, color = "#42a0ab", face = "bold"),
+    axis.text.x = element_text(size = 10, color = "grey20", face = "bold"),
+    axis.text.y = element_text(size = 10, color = "grey20", face = "bold"))
+```
+Lets have a closer look at the multi-day hires.
+Lets drop the rides of an hour or less because they make up the vast majority.
+
+```{r}
+long_hire_filtered <- long_hire %>% 
+  filter(longhire != "0 - 20 min" & longhire != "20-60 min")
 ```
 
 
+```{r}
+grouped_hire_duration_plot <- ggplot(long_hire_filtered, aes(x = user_type, y = numberofrides, fill = longhire)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Rental length by user type",
+       x = "User Type",
+       y = "Number of Rides",
+       fill = "Rental time") +
+  theme_minimal() +
+  scale_fill_manual(values = c("#b3e6e9","#91d8e0", "#6fc9d3", "#4dbac6", "#2aaeb9", "#009faa", "#008c97"  )) +
+  scale_y_log10() +
+  geom_text(aes(label = numberofrides), position = position_dodge(width = 0.9), vjust = -0.5)+
+  theme(plot.title = element_text(size = 22, color = "#42a0ab", face = "bold"), 
+    plot.subtitle = element_text(size = 14, color = "grey20", face = "bold"), 
+    plot.caption = element_text(size = 8, color = "grey35"),
+    legend.title = element_text(size = 16, face = "bold", color = "#42a0ab"),
+    legend.text = element_text(size = 14, color = "grey20"),
+    axis.title.x = element_text(size = 15, color = "#42a0ab", face = "bold"), 
+    axis.title.y = element_text(size = 15, color = "#42a0ab", face = "bold"),
+    axis.text.x = element_text(size = 10, color = "grey20", face = "bold"),
+    axis.text.y = element_text(size = 10, color = "grey20", face = "bold"))
+```
+```{r}
+grouped_hire_duration_plot
+```
+Now lets focus in on the rides that lasted longer than a day.
+
+```{r}
+long_hire_filtered1 <- long_hire %>% 
+  filter(longhire %in% c("1-2 days", "2-4 days", "5 days or more"))
+
+day_or_longer_plot <- ggplot(long_hire_filtered1, aes(x = user_type, y = numberofrides, fill = longhire)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Long hire bike rental by user_type",
+       x = "User Type",
+       y = "Number of Rides",
+       fill = "Long Hire") +
+  theme_minimal() +
+  scale_fill_manual(values = c("#b3e6e9","#91d8e0", "#42a0ab")) +
+  theme(plot.title = element_text(size = 22, color = "#42a0ab", face = "bold"), 
+    plot.subtitle = element_text(size = 14, color = "grey20", face = "bold"), 
+    plot.caption = element_text(size = 8, color = "grey35"),
+    legend.title = element_text(size = 16, face = "bold", color = "#42a0ab"),
+    legend.text = element_text(size = 14, color = "grey20"),
+    axis.title.x = element_text(size = 15, color = "#42a0ab", face = "bold"), 
+    axis.title.y = element_text(size = 15, color = "#42a0ab", face = "bold"),
+    axis.text.x = element_text(size = 10, color = "grey20", face = "bold"),
+    axis.text.y = element_text(size = 10, color = "grey20", face = "bold")) +
+  geom_text(aes(label = numberofrides), position = position_dodge(width = 0.9), vjust = -0.5)
+```
+
+
+```{r}
+day_or_longer_plot
+```
+From and initial 4299967 ride we can see a total of 131 rides that went for more than a day. This number is insignificant in the scheme of thing and could be from user error when closing out the ride or from errors in the docking station so no further investigation is warranted.
+
+lets see if the day of the week matters
+
+```{r}
+ggplot(data_clean, aes(x = wday, fill = user_type)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Trips taken by user type on each day of the week",
+       x = "Day of the week",
+       y = "Number of trips",
+       fill = "User type") +
+  theme_minimal() +
+    scale_fill_manual(values = c("#91d8e0", "#42a0ab")) +
+  theme(plot.title = element_text(size = 22, color = "#42a0ab", face = "bold"), 
+    plot.subtitle = element_text(size = 14, color = "grey20", face = "bold"), 
+    plot.caption = element_text(size = 8, color = "grey35"),
+    legend.title = element_text(size = 16, face = "bold", color = "#42a0ab"),
+    legend.text = element_text(size = 14, color = "grey20"),
+    axis.title.x = element_text(size = 15, color = "#42a0ab", face = "bold"), 
+    axis.title.y = element_text(size = 15, color = "#42a0ab", face = "bold"),
+    axis.text.x = element_text(size = 10, color = "grey20", face = "bold"),
+    axis.text.y = element_text(size = 10, color = "grey20", face = "bold")) 
+```
+
+Lets have a look at our commuters who use the bikes for less than an hour each day.
+
+```{r}
+short_hire_filtered <- long_hire %>% 
+  filter(longhire == "0 - 20 min" | longhire == "20-60 min")
+
+ggplot(short_hire_filtered, aes(x = wday, y = numberofrides, fill = longhire)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Short rental length by user type",
+       x = "Week day",
+       y = "Number of Rides",
+       fill = "Rental time") +
+  theme_minimal() +
+  scale_fill_manual(values = c("#91d8e0", "#2aaeb9"  )) +
+    theme(plot.title = element_text(size = 22, color = "#42a0ab", face = "bold"), 
+    plot.subtitle = element_text(size = 14, color = "grey20", face = "bold"), 
+    plot.caption = element_text(size = 8, color = "grey35"),
+    legend.title = element_text(size = 16, face = "bold", color = "#42a0ab"),
+    legend.text = element_text(size = 14, color = "grey20"),
+    axis.title.x = element_text(size = 15, color = "#42a0ab", face = "bold"), 
+    axis.title.y = element_text(size = 15, color = "#42a0ab", face = "bold"),
+    axis.text.x = element_text(size = 10, color = "grey20", face = "bold"),
+    axis.text.y = element_text(size = 10, color = "grey20", face = "bold"))+
+  facet_wrap(~user_type)
+```
+We  can see that members mostly use the bikes for short commutes during the weekdays but causal users use the bikes for short trips more in the weekend both for short trips and trips upto an hour.
