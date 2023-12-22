@@ -3,6 +3,7 @@ title: "Google Analytics Capstone Project: How Does a Bike-Share Navigate Speedy
 author: "N Austin"
 date: "2023-12-19"
 output: html_document
+data: 2022-12-01 to 2023-11-25
 ---
 
 ```{r setup, include=FALSE}
@@ -27,5 +28,364 @@ design a new marketing strategy to convert casual riders into annual members. Bu
 #### About the company
 
 In 2016, Cyclistic launched a successful bike-share offering. Since then, the program has grown to a fleet of 5,824 bicycles that are geotracked and locked into a network of 692 stations across Chicago. The bikes can be unlocked from one station and returned to any other station in the system anytime.
+
+#### Tasks
+Produce a report with the following deliverables:
+* 1. A clear statement of the business task
+* 2. A description of all data sources used
+* 3. Documentation of any cleaning or manipulation of data
+* 4. A summary of your analysis
+* 5. Supporting visualizations and key findings
+* 6. Your top three recommendations based on your analysis
+
+##### Business task: How do annual members and casual riders use Cyclistic bikes differently?
+Analyse the data from the previous 12 months and find out how the different members use the bikes so we can target more casual members via a digital marketing strategy to become annual members.
+
+##### Data: where has it come from and what time frame.
+The data is a set of .csv files provided by the company for each month from December 22 to November 23
+
+### Preparation for analysis.
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(skimr)
+library(dplyr)
+library(tidyr)
+library(DataExplorer)
+library(scales)
+```
+
+
+### Importing and data validation.
+Read in individual data sets.
+
+```{r}
+dec22 <- read_csv("202212-divvy-tripdata.csv")
+jan23 <- read_csv("202301-divvy-tripdata.csv")
+feb23 <- read_csv("202302-divvy-tripdata.csv")
+mar23 <- read_csv("202303-divvy-tripdata.csv")
+apr23 <- read_csv("202304-divvy-tripdata.csv")
+may23 <- read_csv("202305-divvy-tripdata.csv")
+jun23 <- read_csv("202306-divvy-tripdata.csv")
+jul23 <- read_csv("202307-divvy-tripdata.csv")
+aug23 <- read_csv("202308-divvy-tripdata.csv")
+sep23 <- read_csv("202309-divvy-tripdata.csv")
+oct23 <- read_csv("202310-divvy-tripdata.csv")
+nov23 <- read_csv("202311-divvy-tripdata.csv")
+```
+
+Merge all data sets into 1 file.
+
+```{r}
+data <- rbind(dec22,jan23,feb23,mar23,apr23,may23,jun23,jul23,aug23,sep23,oct23,nov23)
+```
+```{r}
+head(data)
+```
+
+
+#### Exploratory Data Analysis
+Lets have a peak at our data.
+
+```{r}
+str(data)
+```
+```{r}
+glimpse(data)
+```
+
+```{r}
+skim_without_charts(data)
+```
+
+
+```{r}
+introduce(data)
+```
+ We have 3597481 missing values
+ Lets visualize the table above and conduct some light analysis
+```{r}
+plot_intro(data)
+```
+It seems we have some missing values, as stated in the table above.  
+* 75.7% of the rows are complete. 
+* 4.9% missing observations.
+
+Lets take a closer look at the the missing data
+```{r}
+plot_missing(data)
+```
+
+Given that we have the most of the start and end latitudes we maybe able to fill these missing values with confidence. Lets find out.
+
+#### Data Cleaning
+Lets check how many unique station IDs we have compared to unique sets of starting or ending co-ordinates.
+```{r}
+# Count unique station ids
+unique_station_ids <- data %>% 
+  select(start_station_id, end_station_id) %>% 
+  distinct() %>% 
+  summarise(count = n())
+
+# Count unique start_lat and start_long combinations
+unique_start_lat_long <- data %>% 
+  select(start_lat, start_lng) %>% 
+  distinct() %>% 
+  summarise(count = n())
+
+# Count unique end_lat and end_long combinations
+unique_end_lat_long <- data %>% 
+  select(end_lat, end_lng) %>% 
+  distinct() %>% 
+  summarise(count = n())
+
+unique_station_ids$count
+unique_start_lat_long$count
+unique_end_lat_long$count
+```
+By comparing the unique station IDs with the starting and ending lats and longs we can see that there must be some inconsistency in the data so we will not be able to match them.
+So lets drop them from the table so we have clean data to work with.
+```{r}
+data_clean <- drop_na(data)
+skim_without_charts(data_clean)
+```
+
+We had 5677610 rows of data before dropping th null values, now we have 4299967
+We cleaned 1377643 rows of data which is about 25%
+Lets check for duplicates.
+
+
+Now we have clean data to work with lets do some data wrangling.
+
+#### Data wrangling
+
+We dont need the latitude and longditude columns as the data serves us no purpose so we can remove them.
+
+```{r}
+data_clean <- select(data_clean,-c(start_lat, start_lng, end_lat, end_lng))
+head(data_clean)
+```
+
+
+The column names are unclear so lets rename them
+
+```{r}
+data_clean <- rename(data_clean, trip_id = ride_id,
+                     bike_type = rideable_type, 
+                     start_time = started_at,  
+                     end_time = ended_at,
+                     from_station_name = start_station_name, 
+                     from_station_id = start_station_id, 
+                     to_station_name = end_station_name, 
+                     to_station_id = end_station_id, 
+                     user_type = member_casual)
+head(data_clean)
+nrow(data_clean)
+```
+We can also remove any duplicated rows from the dataset based on the ride_id
+```{r}
+data_clean <- data_clean[!duplicated(data_clean$trip_id),] 
+nrow(data_clean)
+```
+Seems like we got rid of all the bad fruit earlier.
+
+
+Lets now add some columns for the days for the week and what year month and the hour of the day the ride started.
+
+```{r}
+data_clean <- data_clean %>%
+  mutate(year = year(start_time),
+         month = month(start_time, label = T),
+         wday = wday(start_time, label= T),
+         hour = format(as.POSIXct(start_time, format="%Y-%m-%d %H:%M"),format="%H"),
+         duration_min = round(as.numeric(difftime(end_time,start_time,
+                        units = "mins")),0)) %>%
+select(-1)
+head(data_clean)
+```
+
+Lets check the min and max ride times to see if we have more odd numbers.
+
+```{r}
+max(data_clean$duration_min)
+min(data_clean$duration_min)
+```
+
+We better check for outliers 
+```{r}
+boxplot(data_clean$duration_min, horizontal = TRUE)
+```
+It seems we have more bad data, there is only 1440 minutes in a day so a rental for 12136 or 8.5 days seems a bit odd, but it could be a user who didn't return the bike or used it for multiple days.
+Here some information on pricing would be helpful to learn what policies they have.
+We also have a negative number of -55 and we cant be sure about if that was inputted incorrectly or a system error so we will remove it and then move on. 
+Given that the business task is to get more causal users to become members we can also take a look at that.
+```{r}
+data_clean <- subset(data_clean, duration_min > 0)
+min(data_clean$duration_min)
+```
+
+1 minute bike rides are not acceptable either, they must have been checking the bike so lets use data where the ride was 1 min or greater but from 1 station to another
+```{r}
+data_clean <- subset(data_clean,!(from_station_name == to_station_name & duration_min <= 1))
+data_clean <- subset(data_clean,duration_min >= 1)
+min(data_clean$duration_min)
+```
+
+
+Lets add some more columns so we can see the peak usage times
+
+```{r}
+data_clean$starting_time <- as.numeric(format(data_clean$start_time, "%H.%M"))
+
+
+data_clean <- data_clean %>% mutate(rush_hour = case_when(starting_time >= 6.0 & starting_time <= 08.59 ~ "Morning rush",
+                                                          starting_time >= 9.0 & starting_time <= 15.59 ~ "Midday",
+                                                          starting_time >= 16.0 & starting_time <= 18.59 ~ "Evening rush",
+                                                          starting_time >= 19.0 & starting_time <= 23.59 ~ "Night" , 
+                                                          starting_time >= 0.0 & starting_time <= 5.59  ~ "Midnight Hours"))
+
+data_clean <- select(data_clean,-starting_time)
+
+head(data_clean)
+```
+Now we have clean data and some extra columns to work with so we can start the analysis
+
+### Analysis
+
+Lets Calculate the average ride_length for members and casual riders.
+```{r}
+aggregate(data_clean$duration_min ~data_clean$user_type, FUN=mean)
+```
+Calculate the average ride_time for users by day_of_week. 
+```{r}
+data_clean%>%
+group_by(user_type, wday) %>%
+summarise(n = n(), duration=mean(duration_min))%>%
+mutate(percentage = n/sum(n) *100)
+```
+Ride count by user, month
+```{r}
+month <- data_clean %>% 
+    group_by(user_type, month) %>% 
+    summarise(numberofrides = n(),.groups = "drop")
+
+month
+```
+
+
+
+lets check the user types and see the customer base
+```{r}
+data_clean %>% 
+  count(user_type) %>% 
+  mutate(percent = n/nrow(data_clean),
+         percent_label = paste0(round(percent * 100)))
+```
+Lets get the top 10 pickup points for each day of the week. 
+
+```{r}
+data_clean %>% 
+  group_by(user_type, wday,from_station_name) %>% 
+  summarise(total=n(),duration=mean(duration_min)) %>% 
+  arrange(desc(total))%>%
+  slice_head(n=10)
+```
+
+```{r}
+# Rides by user, hour
+hour <- data_clean %>%
+    group_by(user_type, hour) %>% 
+    summarise(numberofrides = n(),.groups = 'drop') %>% 
+      arrange(hour)
+
+hour
+```
+number of rides by user and period of the day
+```{r}
+rushhour <- data_clean %>%
+    group_by(user_type, rush_hour) %>% 
+    summarise(numberofrides = n(),.groups = 'drop')  %>% 
+      arrange(rush_hour)
+rushhour
+```
+
+
+###  Visual Analysis
+Lets plot the different user types
+```{r}
+data_clean %>% 
+  count(user_type) %>% 
+  mutate(percent = n/nrow(data_clean),
+         percent_label = paste0(round(percent * 100), "%")) %>%
+  ggplot(aes("", percent, fill = user_type, label = percent_label)) +
+  geom_col(color = "white") +
+  geom_text(color = "black",
+            position = position_stack(vjust = 0.5),
+            size = 7) +
+  coord_polar(theta = "y", start = 0) +
+  theme_void() +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  scale_fill_manual(values = c("#91d8e0","#42a0ab")) +
+  labs(fill = "User Type" ,
+       title = "Percentage of User Type") +
+  theme(plot.title = element_text(hjust = 0.5,size = 18, color = "black"))
+```
+Lets now have a look at what type of bikes each user type used.
+```{r}
+ggplot(
+     data_clean%>%
+    group_by(user_type, bike_type) %>%
+    summarise(n = n())%>%
+    mutate(percentage = n/sum(n) *100) ,
+    aes(x=user_type, y=n/1000, fill=user_type)
+) + 
+geom_col(position="dodge") +
+scale_fill_manual(values = c("#91d8e0","#42a0ab")) +
+geom_text(aes(label = paste0(round(percentage), "%")), position=position_dodge(0.85), vjust = 0) +
+labs(x="Users", y="Bike Trips *1000", title="Bike preference per users and rideable type")+
+facet_wrap(~bike_type)
+```
+We can see that the 'docked_bike' usage is only for casual members and if we compare this to previos years data we can see a big increase in electric bike usage.
+In a previous 2021-2022 anaylsis electric bike usage was at 24% and 25% respectively 
+
+![April 2021 - March 2022](https://www.kaggleusercontent.com/kf/101321435/eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..FImFb4l_C94OLx2Q5iAgFQ.fGU90qe4_o76Urct_27V1pUvvHfSsnyvY1_DBAuenskmpBYstOPSSYFLxjN8qvbWzHpuxvqviPt4QJUlw_RhmFUWgUJmA5GhUo0C_IiCRdTo67fDF4nfxkyf9-Zjx2GUK7HMUzsjvatQc-uUry1rqanFy371qX9Rymmtv4OyhoWtphFzdf8cDGCJJgdfGQ_OAUske1yHfSAaULiKDWWrIwEYI84e-xVPxqymhNjDXQimAq-ao4mLn7VaGueBnwxnlRY2hRsnzCFZrDdzgK8k0ude3IARkUz3kn-zmXgWvupvTgNH7oMHHsxUi7HWPFz9bBUG9KfeizDO-2nFKjneGxvyEWsEcDJ20Kh6syey9siL3Ha6V20RE8LIQ1VxqIioI4g_dg13ENoeVmy3HQCMFf6FlfaH-nncgyeXa8Y_102EGD3ywgXDZai3DGKCqhcnEZsxIlsdmmeUl6ePHYq8VdpXXtA4TCd8ESuaF3ck1liRN8n3M7Yxk0iICifU0FDLa-2bR0wMU85YM9Bk_pUmBq23GZYXmWWG-zJD2tGSqOU9Lg2KV-ri627AVRUiwqgSQmq-EjW9NB4wXA0TResAuC_RRKPvQwEycus4r561UgSe7da1PiU7QJLG4KeWl8P-0lXu9x4eHcOgOeWKgFfPFs3Ehk7l3U5YH5cqdMG-Tmg.OxzG0pjkvudrN89Z1XGIfw/__results___files/__results___24_0.png)
+source [PEYMAN MIHANKHAH](https://www.kaggle.com/code/peymanmi/cyclistic-casestudy-r)
+
+Remember those long rental periods? lets explore those
+
+```{r}
+ggplot(hour, aes(hour, numberofrides,  fill = user_type, group = user_type)) +
+geom_bar(stat = "identity") +
+scale_fill_manual(values = c("#91d8e0", "#42a0ab"), name = "Types of riders", breaks = c("casual", "member"), labels = c("Casual Member", "Annual Member")) +
+labs(title = "Rides Throughout the Day", subtitle = "Rides peak during early evening hours",
+    caption = "Data: Motivate International",
+    x = "Hour", y = "Number of Rides") +
+theme_minimal() +
+theme(plot.title = element_text(size = 22, color = "#42a0ab", face = "bold"), 
+    plot.subtitle = element_text(size = 14, color = "grey20", face = "bold"), 
+    plot.caption = element_text(size = 8, color = "grey35"),
+    legend.title = element_text(size = 16, face = "bold", color = "#42a0ab"),
+    legend.text = element_text(size = 14, color = "grey20"),
+    axis.title.x = element_text(size = 15, color = "#42a0ab", face = "bold"), 
+    axis.title.y = element_text(size = 15, color = "#42a0ab", face = "bold"),
+    axis.text.x = element_text(size = 10, color = "grey20", face = "bold"),
+    axis.text.y = element_text(size = 10, color = "grey20", face = "bold"))
+```
+
+
+```{r}
+rushhour %>% ggplot(mapping = aes(x=rush_hour, y= numberofrides, fill = user_type)) + 
+  geom_col(position="dodge") +
+  scale_x_discrete(limits = c("Morning rush", "Midday", "Evening rush", "Night", "Midnight Hours")) +
+  scale_y_continuous(labels = comma) +
+  scale_fill_manual(values = c("#91d8e0", "#42a0ab")) +
+  ggtitle("Number of rides taken by each user type") +
+  xlab("Rush Hour") +
+  ylab("Number Of  Rides") +
+  labs(fill = "User Type")+
+  theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5, size=20, face = "bold"))
+```
 
 
