@@ -2,9 +2,8 @@
 title: "Google Analytics Capstone Project: How Does a Bike-Share Navigate Speedy Success?"
 author: "N Austin"
 date: "2023-12-19"
-output: html_document:
-  toc = TRUE
-
+output: html_document
+toc: TRUE
 data: 2022-12-01 to 2023-11-25
 ---
 
@@ -17,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ### 1. Business question: How do annual members and casual riders use Cyclistic bikes differently?
 
-![](https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/00_2141_Bicycle-sharing_systems_-_Sweden.jpg/290px-00_2141_Bicycle-sharing_systems_-_Sweden.jpg)
+![Bike rental](https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/00_2141_Bicycle-sharing_systems_-_Sweden.jpg/290px-00_2141_Bicycle-sharing_systems_-_Sweden.jpg)
 
 Image [W.Bulach](https://commons.wikimedia.org/wiki/User:W._Bulach)
 
@@ -410,7 +409,7 @@ facet_wrap(~bike_type)
 We can see that the 'docked_bike' usage is only for casual members and if we compare this to previos years data we can see a big increase in electric bike usage.
 In a previous 2021-2022 analysis electric bike usage was at 24% and 25% respectively 
 
-![2021-2022](results_21.png){out.dim= c(50%)}  
+![2021-2022](results_21.png){out.dim= c(25%)}  
 source [PEYMAN MIHANKHAH](https://www.kaggle.com/code/peymanmi/cyclistic-casestudy-r)
 
 Lets look at when the most rides occur.
