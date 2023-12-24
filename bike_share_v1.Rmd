@@ -496,7 +496,7 @@ long_hire_filtered1 <- long_hire %>%
 
 day_or_longer_plot <- ggplot(long_hire_filtered1, aes(x = user_type, y = numberofrides, fill = longhire)) +
   geom_bar(stat = "identity", position = "dodge") +
-  labs(title = "Long hire bike rental by user_type",
+  labs(title = "Long hire bike rental by user type",
        x = "User Type",
        y = "Number of Rides",
        fill = "Long Hire") +
@@ -525,7 +525,7 @@ lets see if the day of the week matters
 ```{r}
 ggplot(data_clean, aes(x = wday, fill = user_type)) +
   geom_bar(position = "dodge") +
-  labs(title = "Trips taken by user type on each day of the week",
+  labs(title = "Trips by user type on each day of the week",
        x = "Day of the week",
        y = "Number of trips",
        fill = "User type") +
@@ -567,4 +567,7 @@ ggplot(short_hire_filtered, aes(x = wday, y = numberofrides, fill = longhire)) +
     axis.text.y = element_text(size = 10, color = "grey20", face = "bold"))+
   facet_wrap(~user_type)
 ```
-We  can see that members mostly use the bikes for short commutes during the weekdays but causal users use the bikes for short trips more in the weekend both for short trips and trips upto an hour.
+We  can see that members mostly use the bikes for short commutes during the weekdays, where as causal users use the bikes for short trips more in the weekend.
+
+
+
