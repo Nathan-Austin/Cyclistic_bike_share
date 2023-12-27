@@ -720,4 +720,13 @@ Here we confirm that almost 70% of all casual users are using the bikes for shor
 
 ### 10. Conclusion 
 
+The goal of this analysis is to understand the casual users and recommend ways that the digital marketing team can try to entice casual users to become members.
+My findings and suggestions are as follows.
+* There is a YoY increase in the amount of electric bike usage in both user groups of approximately 20%.
+    Offer new members a discount or price match on electric bike hire for the first 3 months.
+* The demand for bike hire increase for the morning and evening rush.
+    Marketing in the subway or on digital music platforms during these times to catch potential members stuck in traffic or in a crowded subway.
+    The highest demand is in the evening rush from 1600-1800, this is also peak time for traffic and subway commutes. Marketing could suggest a price comparison.
+* Causal users are still taking longer rides in the weekend, suggesting they are using the service for more than just commuting. 
+    Cyclistic marketing can target users in the lead up to the weekend with a pitch to get outside, move and explore, while also saving time and money during the week.
 
