@@ -12,24 +12,24 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## How Does a Bike-Share Navigate Speedy Success?
-### Google Analytics Capstone Project: Case stay 1. Cyclistic Bike-Share {.unlisted .unnumbered}
+### Google Analytics Capstone Project: Case stay 1. Cyclistic Bike-Share 
 
-### 1. Business question: How do annual members and casual riders use Cyclistic bikes differently?
+### 1. Introduction: How do annual members and casual riders use Cyclistic bikes differently?
 
 ![Bike rental](https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/00_2141_Bicycle-sharing_systems_-_Sweden.jpg/290px-00_2141_Bicycle-sharing_systems_-_Sweden.jpg)
 
 Image [W.Bulach](https://commons.wikimedia.org/wiki/User:W._Bulach)
 
-#### Scenario {.unlisted .unnumbered}
+### 2. Scenario 
 
 You are a junior data analyst working in the marketing analyst team at Cyclistic, a bike-share company in Chicago. The director of marketing believes the company’s future success depends on maximizing the number of annual memberships. Therefore, your team wants to understand how casual riders and annual members use Cyclistic bikes differently. From these insights, your team will
 design a new marketing strategy to convert casual riders into annual members. But first, Cyclistic executives must approve your recommendations, so they must be backed up with compelling data insights and professional data visualizations.
 
-#### 2. About the company
+#### About the company
 
 In 2016, Cyclistic launched a successful bike-share offering. Since then, the program has grown to a fleet of 5,824 bicycles that are geotracked and locked into a network of 692 stations across Chicago. The bikes can be unlocked from one station and returned to any other station in the system anytime.
 
-#### Tasks {.unlisted .unnumbered}
+#### Tasks 
 Produce a report with the following deliverables:
 * 1. A clear statement of the business task
 * 2. A description of all data sources used
@@ -41,10 +41,10 @@ Produce a report with the following deliverables:
 ### 3. Business task: How do annual members and casual riders use Cyclistic bikes differently?
 Analyse the data from the previous 12 months and find out how the different members use the bikes so we can target more casual members via a digital marketing strategy to become annual members.
 
-##### Data: where has it come from and what time frame. {.unlisted .unnumbered}
+##### Data: where has it come from and what time frame. 
 The data is a set of .csv files provided by the company for each month from December 22 to November 23
 
-#### Preparation for analysis. {.unlisted .unnumbered}
+#### Preparation for analysis. 
 
 ```{r}
 library(tidyverse)
@@ -112,6 +112,7 @@ plot_intro(data)
 It seems we have some missing values, as stated in the table above.  
 * 75.7% of the rows are complete. 
 * 4.9% missing observations.
+
 
 Lets take a closer look at the the missing data
 ```{r}
@@ -359,8 +360,8 @@ long_hire
 
 Lets clean up the results and find out the percentages for the causal users
 ```{r}
+data_clean_casual <- data_clean %>% filter(user_type == "casual")
 
-library(forcats)
 
 long_hire1 <- data_clean_casual %>% 
   group_by(user_type) %>% 
@@ -528,7 +529,6 @@ grouped_hire_duration_plot <- ggplot(long_hire_filtered, aes(x = user_type, y = 
   theme_minimal() +
   scale_fill_manual(values = c("#b3e6e9","#91d8e0", "#6fc9d3", "#4dbac6", "#2aaeb9", "#009faa", "#008c97"  )) +
   scale_y_log10() +
-  geom_text(aes(label = numberofrides), position = position_dodge(width = 0.9), vjust = -0.5)+
   theme(plot.title = element_text(size = 22, color = "#42a0ab", face = "bold"), 
     plot.subtitle = element_text(size = 14, color = "grey20", face = "bold"), 
     plot.caption = element_text(size = 8, color = "grey35"),
@@ -555,7 +555,7 @@ ggplot(casual_filtered, aes(x = user_type, y = numberofrides, fill = longhire)) 
   theme_minimal() +
   scale_fill_manual(values = c("#b3e6e9","#91d8e0", "#6fc9d3", "#4dbac6", "#2aaeb9", "#009faa", "#008c97"  )) +
   scale_y_log10() +
-  geom_text(aes(label = numberofrides), position = position_dodge(width = 0.9), vjust = -0.5)+
+  #geom_text(aes(label = numberofrides), position = position_dodge(width = 0.9), vjust = -0.5)+
   theme(plot.title = element_text(size = 22, color = "#42a0ab", face = "bold"), 
     plot.subtitle = element_text(size = 14, color = "grey20", face = "bold"), 
     plot.caption = element_text(size = 8, color = "grey35"),
@@ -721,12 +721,15 @@ Here we confirm that almost 70% of all casual users are using the bikes for shor
 ### 10. Conclusion 
 
 The goal of this analysis is to understand the casual users and recommend ways that the digital marketing team can try to entice casual users to become members.
-My findings and suggestions are as follows.
+My findings and suggestions are as follows:
+
 * There is a YoY increase in the amount of electric bike usage in both user groups of approximately 20%.
     Offer new members a discount or price match on electric bike hire for the first 3 months.
+    
 * The demand for bike hire increase for the morning and evening rush.
     Marketing in the subway or on digital music platforms during these times to catch potential members stuck in traffic or in a crowded subway.
     The highest demand is in the evening rush from 1600-1800, this is also peak time for traffic and subway commutes. Marketing could suggest a price comparison.
+    
 * Causal users are still taking longer rides in the weekend, suggesting they are using the service for more than just commuting. 
     Cyclistic marketing can target users in the lead up to the weekend with a pitch to get outside, move and explore, while also saving time and money during the week.
 
