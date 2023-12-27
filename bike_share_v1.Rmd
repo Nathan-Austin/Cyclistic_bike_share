@@ -54,6 +54,7 @@ library(dplyr)
 library(tidyr)
 library(DataExplorer)
 library(scales)
+library(forcats)
 ```
 
 
@@ -354,6 +355,59 @@ long_hire
 ```
 
 
+
+
+Lets clean up the results and find out the percentages for the causal users
+```{r}
+
+library(forcats)
+
+long_hire1 <- data_clean_casual %>% 
+  group_by(user_type) %>% 
+  mutate(longhire = cut(duration_min, 
+                        breaks = c(0, 20, 60, 120, 240, 480, 1440, 2880, 5760, Inf), 
+                        labels = c("0 - 20 min", "20-60 min", "1-2 hrs", "2-4 hrs", "4-8 hrs", "8-24hrs", "1-2 days", "2-4 days", "5 days or more"))) %>% 
+  group_by(longhire, user_type) %>% 
+  summarise(numberofrides = n(), .groups = 'drop') %>% 
+  mutate(longhire = fct_relevel(factor(longhire), "0 - 20 min", "20-60 min", "1-2 hrs", "2-4 hrs", "4-8 hrs", "8-24hrs", "1-2 days", "2-4 days", "5 days or more"), 
+         total_rides = sum(numberofrides),
+         percentage = round(numberofrides / total_rides * 100, 2))
+
+long_hire1
+
+```
+
+```{r}
+library(ggrepel)
+
+ggplot(long_hire1, aes(x = "", y = numberofrides, fill = longhire)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y", start = 0) +
+  labs(title = "Proportion of Rides by Time",
+       x = NULL,
+       y = NULL,
+       fill = "Long Hire Category") +
+  theme_minimal() +
+  scale_fill_manual(values = c("#b3e6e9","#91d8e0", "#6fc9d3", "#4dbac6", "#2aaeb9", "#009faa", "#008c97" , "#007a87", "#006d77" )) +
+  geom_text_repel(aes(label=numberofrides), box.padding=0.5, point.padding=0.5) +
+   theme(plot.title = element_text(size = 22, color = "#42a0ab", face = "bold"), 
+    plot.subtitle = element_text(size = 14, color = "grey20", face = "bold"), 
+    plot.caption = element_text(size = 8, color = "grey35"),
+    legend.title = element_text(size = 16, face = "bold", color = "#42a0ab"),
+    legend.text = element_text(size = 14, color = "grey20"),
+    axis.title.x = element_text(size = 15, color = "#42a0ab", face = "bold"), 
+    axis.title.y = element_text(size = 15, color = "#42a0ab", face = "bold"),
+    axis.text.x = element_text(size = 10, color = "grey20", face = "bold"),
+    axis.text.y = element_text(size = 10, color = "grey20", face = "bold"))
+```
+
+
+
+
+
+
+
+
 ### 9. Visual Analysis
 Lets plot the different user types
 ```{r}
@@ -488,6 +542,32 @@ grouped_hire_duration_plot <- ggplot(long_hire_filtered, aes(x = user_type, y = 
 ```{r}
 grouped_hire_duration_plot
 ```
+
+```{r}
+casual_filtered <- long_hire_filtered %>%  filter(user_type != 'member')
+
+ggplot(casual_filtered, aes(x = user_type, y = numberofrides, fill = longhire)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Rental length by user type",
+       x = "User Type",
+       y = "Number of Rides",
+       fill = "Rental time") +
+  theme_minimal() +
+  scale_fill_manual(values = c("#b3e6e9","#91d8e0", "#6fc9d3", "#4dbac6", "#2aaeb9", "#009faa", "#008c97"  )) +
+  scale_y_log10() +
+  geom_text(aes(label = numberofrides), position = position_dodge(width = 0.9), vjust = -0.5)+
+  theme(plot.title = element_text(size = 22, color = "#42a0ab", face = "bold"), 
+    plot.subtitle = element_text(size = 14, color = "grey20", face = "bold"), 
+    plot.caption = element_text(size = 8, color = "grey35"),
+    legend.title = element_text(size = 16, face = "bold", color = "#42a0ab"),
+    legend.text = element_text(size = 14, color = "grey20"),
+    axis.title.x = element_text(size = 15, color = "#42a0ab", face = "bold"), 
+    axis.title.y = element_text(size = 15, color = "#42a0ab", face = "bold"),
+    axis.text.x = element_text(size = 10, color = "grey20", face = "bold"),
+    axis.text.y = element_text(size = 10, color = "grey20", face = "bold"))
+```
+
+
 Now lets focus in on the rides that lasted longer than a day.
 
 ```{r}
@@ -510,8 +590,8 @@ day_or_longer_plot <- ggplot(long_hire_filtered1, aes(x = user_type, y = numbero
     axis.title.x = element_text(size = 15, color = "#42a0ab", face = "bold"), 
     axis.title.y = element_text(size = 15, color = "#42a0ab", face = "bold"),
     axis.text.x = element_text(size = 10, color = "grey20", face = "bold"),
-    axis.text.y = element_text(size = 10, color = "grey20", face = "bold")) +
-  geom_text(aes(label = numberofrides), position = position_dodge(width = 0.9), vjust = -0.5)
+    axis.text.y = element_text(size = 10, color = "grey20", face = "bold")) 
+  #geom_text(aes(label = numberofrides), position = position_dodge(width = 0.9), vjust = -0.5)
 ```
 
 
@@ -541,6 +621,8 @@ ggplot(data_clean, aes(x = wday, fill = user_type)) +
     axis.text.x = element_text(size = 10, color = "grey20", face = "bold"),
     axis.text.y = element_text(size = 10, color = "grey20", face = "bold")) 
 ```
+Here we see that Members use the bikes more during the standard working week, and we can see that there is an increase in casual users in the weekend. We can see consistent usage by casual users during the week with an increase towards and during the weekend
+
 
 Lets have a look at our commuters who use the bikes for less than an hour each day.
 
@@ -567,7 +649,75 @@ ggplot(short_hire_filtered, aes(x = wday, y = numberofrides, fill = longhire)) +
     axis.text.y = element_text(size = 10, color = "grey20", face = "bold"))+
   facet_wrap(~user_type)
 ```
-We  can see that members mostly use the bikes for short commutes during the weekdays, where as causal users use the bikes for short trips more in the weekend.
+We  can see that more members use the bikes for short commutes during the weekdays, where as more causal users use the bikes for short trips in the weekend.
 
+Lets have a deeper look at the causal users and how the rises stack up on each day of the week.
+
+```{r}
+long_hire_wday <- data_clean_casual %>% 
+  group_by(user_type, wday) %>% 
+  mutate(longhire = cut(duration_min, 
+                        breaks = c(0, 20, 60, 120, 240, 480, 1440, 2880, 5760, Inf), 
+                        labels = c("0 - 20 min", "20-60 min", "1-2 hrs", "2-4 hrs", "4-8 hrs", "8-24hrs", "1-2 days", "2-4 days", "5 days or more"))) %>% 
+  group_by(longhire, user_type, wday) %>% 
+  summarise(numberofrides = n(), .groups = 'drop') %>% 
+  mutate(longhire = fct_relevel(factor(longhire), "0 - 20 min", "20-60 min", "1-2 hrs", "2-4 hrs", "4-8 hrs", "8-24hrs", "1-2 days", "2-4 days", "5 days or more"), 
+         total_rides = sum(numberofrides),
+         percentage = round(numberofrides / total_rides * 100, 2))
+
+
+# Create a stacked bar chart with the percentage of longhire time for each day
+ggplot(long_hire_wday, aes(x = wday, y = percentage, fill = longhire)) +
+  geom_bar(stat = "identity", position = "fill") +
+  labs(title = "Percentage of Long Hire Time by Day for User Type Casual",
+       x = "Day of the Week",
+       y = "Percentage of Hire Time",
+       fill = "Hire Time") +
+  theme_minimal() +
+  scale_fill_manual(values = c("#b3e6e9","#91d8e0", "#6fc9d3", "#4dbac6", "#2aaeb9", "#009faa", "#008c97" , "#007a87", "#006d77"    )) +
+  theme(plot.title = element_text(size = 22, color = "#42a0ab", face = "bold"), 
+    plot.subtitle = element_text(size = 14, color = "grey20", face = "bold"), 
+    plot.caption = element_text(size = 8, color = "grey35"),
+    legend.title = element_text(size = 16, face = "bold", color = "#42a0ab"),
+    legend.text = element_text(size = 14, color = "grey20"),
+    axis.title.x = element_text(size = 15, color = "#42a0ab", face = "bold"), 
+    axis.title.y = element_text(size = 15, color = "#42a0ab", face = "bold"),
+    axis.text.x = element_text(size = 10, color = "grey20", face = "bold"),
+    axis.text.y = element_text(size = 10, color = "grey20", face = "bold"))
+
+
+
+```
+Here we can see that as a percentage, the is a higher use for short 0-20 min trips by casual users during weekdays. Although there are more causal users in the weekend, the week day users seem to mimic those of members.
+
+```{r}
+library(ggplot2)
+
+# Filter rows where percentage is greater than 2
+long_hire1_filtered <- long_hire1 %>% filter(percentage > 2)
+
+# Create pie chart with filtered data
+ggplot(long_hire1_filtered, aes(x = "", y = numberofrides, fill = longhire)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar(theta = "y", start = 0 ) +
+  geom_text(aes(label = ifelse(percentage > 2, paste0(round(percentage, 2), "%"), "")), 
+            position = position_stack(vjust = 0.5)) +
+  labs(title = "Proportion of Rides by Hire Time",
+       x = NULL,
+       y = NULL,
+       fill = "Hire Period") +
+  theme_minimal() +
+  scale_fill_manual(values = c("#b3e6e9","#6fc9d3", "#009faa",  "#006d77" )) +
+    theme(plot.title = element_text(size = 22, color = "#42a0ab", face = "bold"), 
+    plot.subtitle = element_text(size = 14, color = "grey20", face = "bold"), 
+    plot.caption = element_text(size = 8, color = "grey35"),
+    legend.title = element_text(size = 16, face = "bold", color = "#42a0ab"),
+    legend.text = element_text(size = 14, color = "grey20"))
+
+```
+Here we confirm that almost 70% of all casual users are using the bikes for short commutes.
+
+
+### 10. Conclusion 
 
 
