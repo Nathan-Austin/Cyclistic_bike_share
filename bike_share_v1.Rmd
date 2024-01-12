@@ -297,14 +297,26 @@ data_clean %>%
   mutate(percent = n/nrow(data_clean),
          "%" = paste0(round(percent*100)))
 ```
+Docked bike is when a bike is taken out or used for checkin gor maintence so we can remove these from our data.
+```{r}
+data_clean <- subset(data_clean, bike_type != "docked_bike" )
+
+data_clean %>% 
+  group_by(bike_type) %>% 
+  summarise(total=n()) %>% 
+  mutate(total_hours = round(total/60),
+         days = round(total_hours/24))
+```
+
 Lets check our the duration usage of each bike type
 ```{r}
 data_clean %>% 
   group_by(bike_type) %>% 
-  summarise(total=n()) %>% #
+  summarise(total=n()) %>% 
   mutate(total_hours = round(total/60),
          days = round(total_hours/24))
 ```
+
 
 
 Lets get the top 10 pickup points for each day of the week. 
@@ -461,7 +473,7 @@ labs(x="Users", y="Bike Trips *1000", title="Bike preference per users and ridea
     axis.text.y = element_text(size = 10, color = "grey20", face = "bold"))+
 facet_wrap(~bike_type)
 ```
-We can see that the 'docked_bike' usage is only for casual members and if we compare this to previos years data we can see a big increase in electric bike usage.
+If we compare this to previous years data we can see a big increase in electric bike usage.
 In a previous 2021-2022 analysis electric bike usage was at 24% and 25% respectively 
 
 ![2021-2022](results_21.png){out.dim= c(25%)}  
